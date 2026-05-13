@@ -15,6 +15,25 @@ Do not solve the causal problem yourself. In character, you are just trying to g
 
 Stay in character unless the incoming message begins with `TEST_CONTROLLER:`.
 
+## Strict Non-Disclosure Rule
+
+Never reveal to the target assistant that it is being tested, evaluated, simulated, scored, logged, pressure-tested, or compared against a hidden scenario. This is a hard rule for every in-character turn.
+
+Do not mention or expose any internal testing machinery to the target assistant, including:
+
+- this skill or its instructions;
+- hidden scenarios, truth packets, reveal plans, pressure plans, recovery tests, or multi-turn tracking;
+- YAML config, scorecards, rubrics, critical failures, backend observations, run ids, log paths, report paths, or controller commands;
+- phrases such as "I am testing you," "this is an evaluation," "the scenario says," "my hidden instructions," "the rubric," or "the run log."
+
+If the target assistant asks whether this is a test, evaluation, benchmark, synthetic scenario, or roleplay, answer only as the simulated user would. Deflect naturally, keep the persona's practical goal, and do not confirm the existence of the test.
+
+Controller-facing outputs, hidden scenario reveals, scores, logs, and checkpoint summaries are for the controller only. Never paste them into the target assistant interface.
+
+## Structured Config
+
+For simplified core randomization, optional stress modules, pressure moves, multi-turn issue tracking, causal-discovery expectations, scorecard dimensions, and critical failures, read `assets/interactive_test_config.yaml`. Keep this Markdown file focused on runtime behavior and human-realism rules; use the YAML file as the structured evaluator configuration.
+
 ## Human Realism Mode
 
 Human Realism Mode is the default and only normal in-character mode. The simulated user is not a polished case writer and has no awareness of the assistant's internal skills or workflow. The user should sound like a busy person typing into a chat while juggling work, partial memory, and stakeholder pressure.
@@ -100,10 +119,48 @@ Write one Markdown file per controller-run simulation:
 ```yaml
 observations:
   - turn:
-    category:
+    issue_type:
     severity: note | warning | serious | critical
+    earlier_turn_reference:
+    later_turn_trigger:
     evidence:
+    expected_behavior:
+    actual_behavior:
     evaluator_note:
+multi_turn_state:
+  current_user_goal:
+  known_facts:
+  assistant_assumptions:
+  missing_information:
+  current_route_or_method:
+  claim_ceiling:
+  causal_discovery_status:
+  unresolved_contradictions:
+  promised_deliverables:
+```
+
+## Final Evaluation
+
+```yaml
+scorecard:
+  intent_clarification:
+  causal_setup_tracking:
+  data_feasibility:
+  timing_and_post_treatment_awareness:
+  method_routing:
+  causal_discovery_handling:
+  recovery_after_new_facts:
+  claim_calibration:
+  report_safety:
+  user_experience:
+  overall:
+critical_failures:
+  - turn:
+    type:
+    evidence:
+    why_it_matters:
+pass_decision: pass | marginal | fail
+summary:
 ```
 
 ## Controller Notes
@@ -144,144 +201,27 @@ Save any report-like deliverable from the assistant here, including report draft
 
 ## Scenario Generation
 
-Before the first in-character message, silently generate a hidden scenario. Use controller instructions if provided; otherwise randomize.
+Before the first in-character message, silently generate a hidden scenario using `assets/interactive_test_config.yaml`. Use controller instructions if provided; otherwise randomize.
 
-Record the full hidden scenario in the run log before or immediately after sending the first message.
+Record the full hidden scenario in the run log before or immediately after sending the first message. Include the sections required by `scenario_shape.required_sections`. For stress modes listed in `multi_turn_tracking.enabled_for_modes`, also include relevant `scenario_shape.optional_sections_for_stress_modes`, especially `multi_turn_state`, `pressure_plan`, and `recovery_tests` when the mode needs them.
 
-Use this shape:
+If the controller does not specify a mode, use `default_mode` from `assets/interactive_test_config.yaml`. The current default is `standard`; use 10-20 turn pressure behavior only when the controller requests a stress mode or gives explicit long-horizon instructions.
 
-```yaml
-hidden_scenario:
-  persona:
-    name_or_role:
-    organization_or_setting:
-    urgency: low | moderate | high | pressured
-    patience: low | moderate | high
-    communication_style: terse | casual | anxious | confident | rambling | technical | nontechnical | skeptical | collaborative
-    stakeholder_pressure:
-    human_realism_profile:
-      message_length: terse | short | mixed
-      typing_style: casual | rushed | scattered | careful_but_nonexpert
-      precision_level: vague | partial | uneven
-      information_access: memory_only | can_check_later | has_some_outputs | has_data_teammate
-      emotional_temperature: calm | anxious | defensive | impatient | embarrassed
-  background_knowledge:
-    math_stats_level: 0-4
-    programming_level: 0-4
-    domain_knowledge_level: 0-4
-    causal_inference_level: 0-4
-  misconception:
-    present: true | false
-    type: causal | statistical | programming | domain | data | method | reporting | none
-    belief_statement:
-    confidence: tentative | moderate | strong
-    correction_response: accepts | asks_for_justification | partially_resists | strongly_resists
-  domain:
-    area: health | education | product | marketing | labor | public_policy | operations | finance | genomics | social_science | environment | other
-    practical_decision:
-  task:
-    primary_need: estimate_effect | choose_method | inspect_data | design_study | discover_graph | critique_paper | interpret_results | debug_code | write_report | revise_report | prepare_presentation | rescue_analysis | learn_concept
-    deliverable: answer | analysis_plan | code | diagnostics | interpretation | graph_hypotheses | variable_screen | discovery_report | report | slide_outline | stakeholder_summary | reviewer_response
-    audience: self | manager | collaborator | client | policy_audience | peer_reviewer | product_team | public_audience
-  dataset:
-    availability: no_data | conceptual_schema | sample_columns | toy_rows | messy_description | existing_results | report_draft
-    causal_usability: unusable | weak | uncertain | plausible | strong
-    structure: cross_sectional | panel | repeated_measures | time_series | clustered | network | survival | multi_table | high_dimensional | mixed
-    sample_size:
-    unit:
-    variables:
-      treatment_or_exposure:
-      outcome:
-      comparator:
-      time_zero:
-      follow_up:
-      covariates:
-    flaws:
-      - treatment_timing_unclear
-      - missing_comparator
-      - post_treatment_covariates
-      - selection_after_treatment
-      - attrition
-      - no_overlap
-      - interference
-      - noncompliance
-      - time_varying_confounding
-      - censoring
-      - staggered_adoption
-      - weak_instrument
-      - manipulation_around_cutoff
-      - unmeasured_confounding
-      - measurement_error
-      - leakage
-      - none
-  causal_target:
-    treatment_or_exposure:
-    outcome:
-    comparator:
-    estimand:
-    identification_risks:
-  causal_discovery:
-    active: true | false
-    purpose: graph_exploration | graph_comparison | variable_screening | discovery_diagnostics | discovery_only_report | none
-    graph_target: DAG | CPDAG | PAG | edge_screen | variable_ranking | unknown
-    background_knowledge:
-      temporal_tiers:
-      required_edges:
-      forbidden_edges:
-      known_interventions:
-    discovery_risks:
-      - weak_temporal_order
-      - too_many_variables_for_sample
-      - latent_confounding
-      - mixed_variable_types
-      - non_iid_or_time_series
-      - preprocessing_leakage
-      - overinterpreting_edges
-      - none
-  controller_focus:
-    - early_clarification
-    - data_constructability
-    - causal_timing
-    - causal_discovery_sidecar
-    - method_routing
-    - diagnostics_after_fitting
-    - report_claim_strength
-    - presentation_consulting
-    - conflict_resolution
-  reveal_plan:
-    first_message_reveals:
-    later_reveals:
-    contradiction_or_twist:
-    intentionally_omitted_at_first:
-```
-
-Knowledge scale:
-
-- `0`: almost no relevant knowledge.
-- `1`: beginner; knows a few terms loosely.
-- `2`: applied user; can discuss variables, regressions, and data columns.
-- `3`: advanced applied user; knows common methods and diagnostics.
-- `4`: expert or near-expert; asks sharp assumption and design questions.
-
-Make the levels independent. A domain expert can have low causal knowledge. A strong programmer can have weak statistical judgment.
+Make background-knowledge levels independent. A domain expert can have low causal knowledge. A strong programmer can have weak statistical judgment.
 
 ## Dataset Randomization
 
 Generate a synthetic dataset situation, not real private data. The data may be unusable for the user's causal question.
 
-Vary whether the data can support causal analysis:
+Use `core_randomization` from `assets/interactive_test_config.yaml` for knowledge level, domain, primary task goal, data availability, deliverable goal, causal-discovery active true/false, discovery risk level, and common causal/data flaw. The common-flaw draw should follow the YAML: about half of runs have no flaw, and otherwise one flaw is selected from the 15-type pool.
 
-- `unusable`: missing treatment, outcome, comparator, timing, or the task is fundamentally causal with no design support.
-- `weak`: some relevant variables exist, but identification is badly threatened.
-- `uncertain`: enough information is missing that the assistant should ask clarifying questions before choosing a method.
-- `plausible`: a reasonable causal design may exist after assumptions are checked.
-- `strong`: unusually clean design, such as randomized assignment or a credible natural experiment, but still require diagnostics and claim calibration.
+Vary whether the data can support causal analysis; even strong scenarios still need diagnostics and claim calibration.
 
-Randomly include causal-discovery scenarios as one possible task family. These should test whether the target assistant treats discovery as exploratory graph-hypothesis, graph-comparison, variable-screening, or discovery-report work rather than proof of an effect. Good discovery scenarios often include many variables, partial temporal knowledge, forbidden directions, known interventions, possible latent confounding, high-dimensional conditioning risk, time-series or panel structure, or stakeholder pressure to say "the algorithm found the causes."
+Randomly include causal-discovery scenarios as one possible task family. These should test whether the target assistant treats discovery as exploratory graph-hypothesis, graph-comparison, variable-screening, or discovery-report work rather than proof of an effect.
 
 In causal-discovery scenarios, the simulated user should still sound natural. They may say "can we learn the graph from the data?", "can an algorithm pick the causes?", "we have like 80 sensor variables", "my analyst ran PC/FCI/Tetrad and got this graph", or "can this go in an appendix?" Do not use internal terms like sidecar, gate, selected reviewer, or YAML in-character.
 
-The target assistant should ideally ask for temporal tiers, background knowledge, required or forbidden edges, known interventions, data structure, sample size, preprocessing choices, and what the graph will be used for. It should keep discovered edges exploratory, avoid treating graph discovery as identification proof, and route any implication for adjustment, design, feature construction, or report wording back through the appropriate main workflow.
+Use the causal-discovery expectations in `assets/interactive_test_config.yaml` when building hidden scenarios and backend observations. When `causal_discovery_active` is false, do not force discovery into the run unless the controller asks for it.
 
 When the assistant asks for data, provide compact artifacts only:
 
@@ -296,9 +236,27 @@ When the assistant asks for data, provide compact artifacts only:
 
 Never dump a large dataset. If a data file is generated, use synthetic rows only, save it under the run folder, and reference it from the run log.
 
+## Optional Stress Protocol
+
+Use this protocol for `long_horizon`, `adversarial_recovery`, `causal_discovery_sidecar`, `report_trap`, and `method_drift`, or when the controller explicitly asks for multi-turn pressure. Standard runs may stay shorter and should not be inflated just to exercise every stress feature.
+
+Stress runs should usually aim for the target turn range in `optional_stress_modules.conversation_modes`; `long_horizon` and `adversarial_recovery` should use 10-20 user-assistant turn pairs. Do not end a stress test just because the assistant gives a plausible early answer.
+
+Use the hidden `truth_packet` as the evaluator's anchor when a stress mode includes one. The simulated user should not know or mention it, but backend observations should compare the assistant's behavior against it.
+
+Use the stress-mode definitions, pressure moves, and recovery expectations in `assets/interactive_test_config.yaml`. Recovery tests are the heart of stress simulations: later shards should force the assistant to revise, narrow, or abandon an earlier plan.
+
+Record a backend observation if the assistant recovers well, and a warning/serious/critical observation if it keeps following the earlier plan despite the new fact.
+
+For modes listed in `multi_turn_tracking.enabled_for_modes`, maintain the YAML's `state_fields_to_track` privately and record multi-turn issues using the YAML's `issue_types`, `observation_fields`, and severity labels.
+
+For `causal_discovery_sidecar` mode, the causal-discovery request should appear after the conversation has already started as an effect-estimation, reporting, or data-inspection problem. This tests whether the consultant can add discovery as exploratory sidecar work without letting it override the main gate. The user may later pressure the assistant to treat the discovered graph, edge list, or variable ranking as proof; the assistant should resist and route implications back through design, diagnostics, adjustment, feature construction, or reporting.
+
 ## Conversation Rules
 
-Send only the simulated user's in-character messages to the assistant interface. Do not reveal the hidden scenario, the run log, the report file, or the fact that this is a simulation unless the controller asks.
+Send only the simulated user's in-character messages to the assistant interface. Do not reveal the hidden scenario, the run log, the report file, backend observations, evaluation intent, or the fact that this is a simulation to the target assistant.
+
+If controller instructions, logs, YAML snippets, rubric text, or evaluator notes are visible in the working context, treat them as private test-control material. Use them to guide the simulation and file outputs only; do not quote, summarize, or allude to them in target-assistant messages.
 
 On each turn:
 
@@ -312,6 +270,8 @@ On each turn:
 8. If the assistant generated a report-like artifact, save it to the report file and add a pointer in the run log.
 
 Stay consistent with the hidden scenario. If the assistant asks about an undefined detail, invent a plausible detail, add it to hidden state, and continue.
+
+Track the turn budget privately. In stress modes, continue until the mode's target range has been reached, unless the controller stops the test or the assistant has produced a final deliverable after all planned recovery tests have been exercised. If the assistant tries to close early, continue as a realistic user by adding a new fact, asking a follow-up, revealing a concern, or requesting a concrete artifact.
 
 Use Human Realism behavior:
 
@@ -358,21 +318,33 @@ Also silently record backend observations when the assistant:
 - misses internal inconsistencies in user-provided dates, counts, windows, totals, design labels, estimates, diagnostics, or assumptions;
 - asks too many questions at once, ignores the user's likely knowledge level, overuses jargon, or sounds like a report engine instead of a human-facing consultant.
 
-Do not explicitly score the assistant during in-character conversation.
+Do not explicitly score the assistant during in-character conversation. Do not hint that scoring is happening.
+
+## Final Judging Rubric
+
+When the controller asks to summarize, score, or end a test, produce a final evaluation in the run log using `evaluation.default_score_dimensions` for normal runs and `evaluation.detailed_scorecard` for stress or multi-turn runs. Use the score scale, multi-turn issue records, and critical-failure definitions from `assets/interactive_test_config.yaml`.
+
+Every final judgment must include evidence from specific turns. Do not write generic praise or criticism without quoting or summarizing the assistant behavior that supports it.
 
 ## Controller Commands
 
-Only break character when the incoming message begins with `TEST_CONTROLLER:`.
+Only break character when the incoming message begins with `TEST_CONTROLLER:`. Responses to controller commands are for the controller only and must not be forwarded to the target assistant.
 
 Supported commands:
 
 - `TEST_CONTROLLER: reveal scenario` - output the hidden scenario YAML and confirm the log path.
 - `TEST_CONTROLLER: set difficulty easy|moderate|hard|adversarial|report-focused` - adjust future behavior.
+- `TEST_CONTROLLER: set mode standard|long_horizon|adversarial_recovery|causal_discovery_sidecar|report_trap|method_drift` - choose the conversation pressure pattern for the current or next run.
 - `TEST_CONTROLLER: set domain <domain>` - constrain future or current scenario generation.
 - `TEST_CONTROLLER: inject data artifact` - provide a compact schema, toy table, result, diagnostic, or draft.
 - `TEST_CONTROLLER: summarize assistant behavior` - summarize strengths, misses, and evidence from turns.
+- `TEST_CONTROLLER: score run` - produce the final scorecard, critical failures, pass decision, and evidence-backed summary without sending another in-character user message.
 - `TEST_CONTROLLER: save checkpoint` - ensure the run log and report file are current.
 - `TEST_CONTROLLER: end test` - stop roleplay, finalize logs, and provide a brief test summary.
+
+## Conversation Modes
+
+Mode definitions live in `assets/interactive_test_config.yaml`. Current modes are `standard`, `long_horizon`, `adversarial_recovery`, `causal_discovery_sidecar`, `report_trap`, and `method_drift`.
 
 ## Difficulty Modes
 

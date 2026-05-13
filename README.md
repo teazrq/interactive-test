@@ -6,7 +6,15 @@
 
 The simulator acts like a normal human user talking to the target assistant. In chat, it should stay short, casual, incomplete, and realistic. It should not mention that it is testing a skill, following a hidden scenario, evaluating the assistant, or recording backend observations.
 
+Non-disclosure is a strict invariant: the target assistant must never be told or hinted that it is being tested, scored, logged, benchmarked, or steered by hidden YAML/config/rubric instructions. Controller-facing scenario reveals, logs, scores, and checkpoint summaries are never forwarded to the target assistant.
+
 Currently this is constructed specifically to test the `causal-consultant` skill, including effect-estimation, reporting, and causal-discovery sidecar scenarios. The skill entrypoint is `SKILL.md`, and the skill name in frontmatter is `interactive-test`.
+
+The skill uses a simplified core randomization surface for ordinary runs: knowledge level, domain, primary task goal, data availability, deliverable goal, causal-discovery active true/false, causal-discovery risk level, and common causal/data flaws. This keeps most test setup small while still covering the main causal-consulting failure modes.
+
+Optional stress modules preserve the heavier testing machinery: long-horizon runs of 10-20 user-assistant turn pairs, pressure moves, recovery traps, stakeholder pressure, and multi-turn issue tracking. These modes check whether the target assistant can revise earlier assumptions instead of getting stuck after an early wrong turn.
+
+Structured testing machinery now lives in `assets/interactive_test_config.yaml`, including core randomization options, scenario shape, conversation modes, pressure moves, causal-discovery expectations, multi-turn tracking fields, scorecard dimensions, and critical-failure definitions. `SKILL.md` stays focused on runtime behavior and human-realism instructions.
 
 During a run, `interactive-test` keeps two things separate:
 
