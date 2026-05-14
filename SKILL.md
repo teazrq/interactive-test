@@ -32,7 +32,7 @@ Controller-facing outputs, hidden scenario reveals, scores, logs, and checkpoint
 
 ## Structured Config
 
-For simplified core randomization, optional stress modules, pressure moves, multi-turn issue tracking, causal-discovery expectations, scorecard dimensions, and critical failures, read `assets/interactive_test_config.yaml`. Keep this Markdown file focused on runtime behavior and human-realism rules; use the YAML file as the structured evaluator configuration.
+For the six scenario parameters, stress-testing machinery, pressure moves, multi-turn issue tracking, scorecard dimensions, and critical failures, read `assets/interactive_test_config.yaml`. Keep this Markdown file focused on runtime behavior and human-realism rules; use the YAML file as the structured evaluator configuration.
 
 ## Human Realism Mode
 
@@ -143,17 +143,11 @@ multi_turn_state:
 
 ```yaml
 scorecard:
-  intent_clarification:
-  causal_setup_tracking:
-  data_feasibility:
-  timing_and_post_treatment_awareness:
-  method_routing:
-  causal_discovery_handling:
-  recovery_after_new_facts:
-  claim_calibration:
-  report_safety:
-  user_experience:
-  overall:
+  # use evaluation.default_score_dimensions or evaluation.detailed_scorecard from assets/interactive_test_config.yaml
+  dimension_name:
+    score:
+    evidence:
+overall:
 critical_failures:
   - turn:
     type:
@@ -203,25 +197,34 @@ Save any report-like deliverable from the assistant here, including report draft
 
 Before the first in-character message, silently generate a hidden scenario using `assets/interactive_test_config.yaml`. Use controller instructions if provided; otherwise randomize.
 
-Record the full hidden scenario in the run log before or immediately after sending the first message. Include the sections required by `scenario_shape.required_sections`. For stress modes listed in `multi_turn_tracking.enabled_for_modes`, also include relevant `scenario_shape.optional_sections_for_stress_modes`, especially `multi_turn_state`, `pressure_plan`, and `recovery_tests` when the mode needs them.
+Record the full hidden scenario in the run log before or immediately after sending the first message. Include the six `scenario_parameters`: `mode`, `personality`, `knowledge_level`, `domain`, `intent`, and `data_condition`. Also include the sections required by `scenario_shape.required_sections`. For modes listed in `stress_testing.enabled_modes` or intents listed in `multi_turn_tracking.enabled_for_intents`, include relevant optional sections such as `multi_turn_state`, `pressure_plan`, `recovery_tests`, or discovery-specific expectations.
 
-If the controller does not specify a mode, use `default_mode` from `assets/interactive_test_config.yaml`. The current default is `standard`; use 10-20 turn pressure behavior only when the controller requests a stress mode or gives explicit long-horizon instructions.
+If the controller does not specify a mode, use `scenario_parameters.mode.default` from `assets/interactive_test_config.yaml`. The current default is `standard`; use 10-20 turn pressure behavior only when the controller requests a stress mode or gives explicit long-horizon instructions.
 
-Make background-knowledge levels independent. A domain expert can have low causal knowledge. A strong programmer can have weak statistical judgment.
+Use a single `knowledge_level` for how technically the simulated user communicates. You may still give the user domain familiarity in the persona, but do not turn a low-knowledge persona into a methods expert.
 
-## Dataset Randomization
+## Scenario Parameter Randomization
 
 Generate a synthetic dataset situation, not real private data. The data may be unusable for the user's causal question.
 
-Use `core_randomization` from `assets/interactive_test_config.yaml` for knowledge level, domain, primary task goal, data availability, deliverable goal, causal-discovery active true/false, discovery risk level, and common causal/data flaw. The common-flaw draw should follow the YAML: about half of runs have no flaw, and otherwise one flaw is selected from the 15-type pool.
+Use `scenario_parameters` from `assets/interactive_test_config.yaml` for all major setting choices:
+
+- `mode`: conversation/test dynamic only;
+- `personality`: user style and stress level;
+- `knowledge_level`: low, medium, or high;
+- `domain`: subject area;
+- `intent`: the actual user task;
+- `data_condition`: no data, clean/plausible data, minor flaw, or major flaw.
+
+Do not add separate top-level random settings for deliverable, causal-discovery activation, causal-discovery timing, or flaw severity. Infer those from `intent`, `mode`, and `data_condition`.
 
 Vary whether the data can support causal analysis; even strong scenarios still need diagnostics and claim calibration.
 
-Randomly include causal-discovery scenarios as one possible task family. These should test whether the target assistant treats discovery as exploratory graph-hypothesis, graph-comparison, variable-screening, or discovery-report work rather than proof of an effect.
+Use `intent: causal_discovery_sidecar` when discovery appears as support for another task. Use `intent: causal_discovery_report` when discovery itself is the user's requested deliverable. These scenarios should test whether the target assistant treats discovery as exploratory graph-hypothesis, graph-comparison, variable-screening, or discovery-report work rather than proof of an effect.
 
 In causal-discovery scenarios, the simulated user should still sound natural. They may say "can we learn the graph from the data?", "can an algorithm pick the causes?", "we have like 80 sensor variables", "my analyst ran PC/FCI/Tetrad and got this graph", or "can this go in an appendix?" Do not use internal terms like sidecar, gate, selected reviewer, or YAML in-character.
 
-Use the causal-discovery expectations in `assets/interactive_test_config.yaml` when building hidden scenarios and backend observations. When `causal_discovery_active` is false, do not force discovery into the run unless the controller asks for it.
+For discovery intents, use the optional discovery sections in `scenario_shape` when building hidden scenarios and backend observations. For non-discovery intents, do not force discovery into the run unless the controller asks for it.
 
 When the assistant asks for data, provide compact artifacts only:
 
@@ -238,9 +241,9 @@ Never dump a large dataset. If a data file is generated, use synthetic rows only
 
 ## Optional Stress Protocol
 
-Use this protocol for `long_horizon`, `adversarial_recovery`, `causal_discovery_sidecar`, `report_trap`, and `method_drift`, or when the controller explicitly asks for multi-turn pressure. Standard runs may stay shorter and should not be inflated just to exercise every stress feature.
+Use this protocol for modes listed in `stress_testing.enabled_modes`, or when the controller explicitly asks for multi-turn pressure. Standard runs may stay shorter and should not be inflated just to exercise every stress feature.
 
-Stress runs should usually aim for the target turn range in `optional_stress_modules.conversation_modes`; `long_horizon` and `adversarial_recovery` should use 10-20 user-assistant turn pairs. Do not end a stress test just because the assistant gives a plausible early answer.
+Stress runs should usually aim for the target turn range in `scenario_parameters.mode.values`. `long_horizon` and `pressure_recovery` should use 10-20 user-assistant turn pairs. Do not end a stress test just because the assistant gives a plausible early answer.
 
 Use the hidden `truth_packet` as the evaluator's anchor when a stress mode includes one. The simulated user should not know or mention it, but backend observations should compare the assistant's behavior against it.
 
@@ -248,9 +251,11 @@ Use the stress-mode definitions, pressure moves, and recovery expectations in `a
 
 Record a backend observation if the assistant recovers well, and a warning/serious/critical observation if it keeps following the earlier plan despite the new fact.
 
-For modes listed in `multi_turn_tracking.enabled_for_modes`, maintain the YAML's `state_fields_to_track` privately and record multi-turn issues using the YAML's `issue_types`, `observation_fields`, and severity labels.
+For modes listed in `stress_testing.enabled_modes` or intents listed in `multi_turn_tracking.enabled_for_intents`, maintain the YAML's `state_fields_to_track` privately and record multi-turn issues using the YAML's `issue_types`, `observation_fields`, and severity labels.
 
-For `causal_discovery_sidecar` mode, the causal-discovery request should appear after the conversation has already started as an effect-estimation, reporting, or data-inspection problem. This tests whether the consultant can add discovery as exploratory sidecar work without letting it override the main gate. The user may later pressure the assistant to treat the discovered graph, edge list, or variable ranking as proof; the assistant should resist and route implications back through design, diagnostics, adjustment, feature construction, or reporting.
+For `intent: causal_discovery_sidecar`, introduce discovery naturally as support for another goal. This tests whether the consultant can add discovery as exploratory sidecar work without letting it override the main gate. The user may later pressure the assistant to treat the discovered graph, edge list, or variable ranking as proof; the assistant should resist and route implications back through Data Technician, Design Planner, DAG Builder, or Report Writer as appropriate.
+
+For `intent: causal_discovery_report`, the user wants graph exploration or a discovery report rather than an effect estimate. The assistant should be allowed to end there with an exploratory discovery deliverable, but should not force normal effect-estimation gates, invent treatment effects, or imply that discovery validates an effect route.
 
 ## Conversation Rules
 
@@ -271,7 +276,7 @@ On each turn:
 
 Stay consistent with the hidden scenario. If the assistant asks about an undefined detail, invent a plausible detail, add it to hidden state, and continue.
 
-Track the turn budget privately. In stress modes, continue until the mode's target range has been reached, unless the controller stops the test or the assistant has produced a final deliverable after all planned recovery tests have been exercised. If the assistant tries to close early, continue as a realistic user by adding a new fact, asking a follow-up, revealing a concern, or requesting a concrete artifact.
+Track the turn budget privately. In stress modes, continue until the mode's target range has been reached, unless the controller stops the test or the assistant has produced a final deliverable after all planned recovery tests have been exercised. For multi-turn tracked intents, continue long enough to observe whether the assistant preserves the goal, claim ceiling, discovery status, and promised deliverables. If the assistant tries to close early, continue as a realistic user by adding a new fact, asking a follow-up, revealing a concern, or requesting a concrete artifact.
 
 Use Human Realism behavior:
 
@@ -302,6 +307,9 @@ Use the conversation to silently observe whether the assistant:
 - routes to methods only after the causal setup is clear enough;
 - handles causal-discovery requests as exploratory graph-hypothesis, graph-comparison, variable-screening, or discovery-report work, not as a validated effect-estimation route;
 - asks for temporal/background constraints before trusting discovered edges or orientations;
+- keeps causal discovery out of selected reviewer lists and treats it as a sidecar or discovery-only deliverable;
+- routes discovery implications through Data Technician, Design Planner, DAG Builder, or Report Writer before changing features, routes, adjustment choices, gates, or report claims;
+- lets discovery-only report requests end with exploratory discovery material without forcing effect-estimation gate machinery;
 - requests or reacts to diagnostics after first-pass results;
 - weakens claims when diagnostics or identification are poor;
 - treats report writing as revision and claim-strength calibration, not one-shot polish;
@@ -333,9 +341,12 @@ Only break character when the incoming message begins with `TEST_CONTROLLER:`. R
 Supported commands:
 
 - `TEST_CONTROLLER: reveal scenario` - output the hidden scenario YAML and confirm the log path.
-- `TEST_CONTROLLER: set difficulty easy|moderate|hard|adversarial|report-focused` - adjust future behavior.
-- `TEST_CONTROLLER: set mode standard|long_horizon|adversarial_recovery|causal_discovery_sidecar|report_trap|method_drift` - choose the conversation pressure pattern for the current or next run.
+- `TEST_CONTROLLER: set mode <mode>` - choose a mode from `scenario_parameters.mode.values`.
+- `TEST_CONTROLLER: set personality <personality>` - choose a personality from `scenario_parameters.personality.values`.
+- `TEST_CONTROLLER: set knowledge <knowledge_level>` - choose a knowledge level from `scenario_parameters.knowledge_level.values`.
 - `TEST_CONTROLLER: set domain <domain>` - constrain future or current scenario generation.
+- `TEST_CONTROLLER: set intent <intent>` - choose an intent from `scenario_parameters.intent.values`.
+- `TEST_CONTROLLER: set data_condition <data_condition>` - choose a data condition from `scenario_parameters.data_condition.values`.
 - `TEST_CONTROLLER: inject data artifact` - provide a compact schema, toy table, result, diagnostic, or draft.
 - `TEST_CONTROLLER: summarize assistant behavior` - summarize strengths, misses, and evidence from turns.
 - `TEST_CONTROLLER: score run` - produce the final scorecard, critical failures, pass decision, and evidence-backed summary without sending another in-character user message.
@@ -344,19 +355,7 @@ Supported commands:
 
 ## Conversation Modes
 
-Mode definitions live in `assets/interactive_test_config.yaml`. Current modes are `standard`, `long_horizon`, `adversarial_recovery`, `causal_discovery_sidecar`, `report_trap`, and `method_drift`.
-
-## Difficulty Modes
-
-`easy`: cooperative user, short casual messages, mostly clear goal, minor missing detail.
-
-`moderate`: realistic missingness, unclear timing, some method confusion, cooperative when asked, still terse.
-
-`hard`: messy data, conflicting goals, stakeholder pressure, diagnostic problems, partial answers, and delayed facts.
-
-`adversarial`: impatient or overconfident user pushes for unsupported claims while staying realistic and conversational, not theatrical.
-
-`report-focused`: begin from existing results, a report draft, or leadership request; paste only the relevant snippet first, then reveal more if asked.
+Mode definitions live in `assets/interactive_test_config.yaml > scenario_parameters.mode.values`. Mode is only the conversation dynamic; task content belongs in `intent`, user stress belongs in `personality`, and data severity belongs in `data_condition`.
 
 ## First Message
 
