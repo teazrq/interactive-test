@@ -1,0 +1,61 @@
+{
+  "data_pool_version": 1,
+  "description": "Public data packets for interactive-test runs. Hidden evaluator notes stay in the skill package and are never copied to run artifacts.",
+  "packets": [
+    {
+      "packet_id": "marketing_retention_major_flaw_001",
+      "path": "marketing_retention_major_flaw_001",
+      "domain": "marketing",
+      "intents": [
+        "estimate_effect",
+        "interpret_results",
+        "write_or_revise_report",
+        "rescue_analysis"
+      ],
+      "data_condition": "has_data_major_flaw",
+      "artifact_types": [
+        "schema_packet",
+        "synthetic_data_file_or_toy_rows",
+        "analysis_output_packet",
+        "draft_report_packet",
+        "limitation_note"
+      ]
+    },
+    {
+      "packet_id": "health_program_minor_flaw_001",
+      "path": "health_program_minor_flaw_001",
+      "domain": "health",
+      "intents": [
+        "estimate_effect",
+        "inspect_or_prepare_data",
+        "interpret_results",
+        "write_or_revise_report"
+      ],
+      "data_condition": "has_data_minor_flaw",
+      "artifact_types": [
+        "schema_packet",
+        "synthetic_data_file_or_toy_rows",
+        "analysis_output_packet",
+        "limitation_note"
+      ]
+    },
+    {
+      "packet_id": "operations_discovery_clean_001",
+      "path": "operations_discovery_clean_001",
+      "domain": "operations",
+      "intents": [
+        "causal_discovery_sidecar",
+        "causal_discovery_report",
+        "inspect_or_prepare_data",
+        "write_or_revise_report"
+      ],
+      "data_condition": "has_data_clean_or_plausible",
+      "artifact_types": [
+        "schema_packet",
+        "synthetic_data_file_or_toy_rows",
+        "discovery_output_packet",
+        "limitation_note"
+      ]
+    }
+  ]
+}

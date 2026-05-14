@@ -1,0 +1,11 @@
+customer_id,month,campaign_flag,days_since_last_login,prior_3mo_spend,support_tickets_30d,discount_offer,renewed_30d,segment
+C001,2026-01,1,24,119,2,1,1,at_risk
+C002,2026-01,0,7,280,0,0,1,active
+C003,2026-01,1,41,64,3,1,0,at_risk
+C004,2026-01,0,18,135,1,0,0,lapsing
+C005,2026-02,1,33,88,2,1,1,at_risk
+C006,2026-02,0,5,310,0,0,1,active
+C007,2026-02,1,56,42,4,1,0,at_risk
+C008,2026-02,0,22,121,1,0,0,lapsing
+C009,2026-03,1,29,97,2,1,1,at_risk
+C010,2026-03,0,11,201,0,0,1,active

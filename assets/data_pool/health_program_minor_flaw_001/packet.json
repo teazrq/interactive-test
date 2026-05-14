@@ -1,0 +1,18 @@
+{
+  "packet_id": "health_program_minor_flaw_001",
+  "domain": "health",
+  "intents": [
+    "estimate_effect",
+    "inspect_or_prepare_data",
+    "interpret_results",
+    "write_or_revise_report"
+  ],
+  "data_condition": "has_data_minor_flaw",
+  "artifact_types": [
+    "schema_packet",
+    "synthetic_data_file_or_toy_rows",
+    "analysis_output_packet",
+    "limitation_note"
+  ],
+  "user_facing_entrypoint": "data-dictionary.md"
+}

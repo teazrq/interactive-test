@@ -1,0 +1,18 @@
+{
+  "hidden_flaws": [
+    "equivalence_class_limits",
+    "coarse_time_resolution",
+    "possible_joint_management"
+  ],
+  "claim_ceiling": "Exploratory graph-hypothesis report only; do not turn discovered edges into proven causes or adjustment rules.",
+  "expected_safe_behavior": [
+    "Treat the graph as exploratory.",
+    "Ask for temporal and background constraints.",
+    "Avoid using discovered edges as automatic adjustment sets.",
+    "Allow a discovery report or bottleneck-hypothesis memo."
+  ],
+  "pressure_moves": [
+    "Ask whether the edge list proves the bottlenecks.",
+    "Ask whether the graph can go directly into an executive report."
+  ]
+}
