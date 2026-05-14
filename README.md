@@ -1,6 +1,6 @@
 # interactive-test
 
-[![Version](https://img.shields.io/badge/version-0.2.3-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-0.2.4-blue.svg)]()
 
 `interactive-test` simulates realistic human users for testing another interactive assistant or skill. It is currently tuned for `causal-consultant`, including effect estimation, reporting, and causal-discovery sidecar or discovery-report scenarios.
 
@@ -20,6 +20,8 @@ Intent carries task content, including `causal_discovery_sidecar` and `causal_di
 Each run log now includes a `Skill Load Check` section. It records whether the simulator actually loaded `interactive-test`, the observed skill/config versions and paths, and whether the run fell back to generic rules. Fallback-only or unverified runs should not be counted as normal pass/fail evidence.
 
 For `has_data_*` scenarios, the simulator selects a packet from `assets/data_pool/` and copies only its `public/` files into the run's `artifacts/` folder. A packet can include a schema, small synthetic data file or toy rows, analysis output, discovery output, or draft report. Hidden evaluator notes remain in the skill package. Report-quality judging should use the copied public artifacts; a data-bearing report test without enough revealed artifact material should be marked invalid.
+
+Packet selection is coverage-aware: unconstrained data-bearing runs choose from available packets first, while `scripts/prepare_data_packet.py` copies only public files into the run workspace.
 
 For real evaluations, the simulator should run longer conversations by default. A scored evaluation needs at least 20 user-assistant turn pairs and should usually include 20-30. It must exercise pressure, a compact artifact, a later flaw or contradiction, report chasing, a deliverable request, and post-deliverable follow-up before it can be marked pass. Very short runs are smoke checks only and should be marked invalid if used as pass/fail evidence.
 

@@ -5,7 +5,7 @@ description: "Use when acting as a human-realism simulated user in another assis
 
 # interactive-test
 
-Version: `0.2.3`
+Version: `0.2.4`
 
 ## Purpose
 
