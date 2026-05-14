@@ -1,25 +1,25 @@
-config_version: 3
-skill_version: "0.2.1"
+config_version: 5
+skill_version: "0.2.3"
 
 scenario_parameters:
   mode:
-    default: standard
+    default: long_horizon
     values:
       standard:
-        target_turn_pairs: "natural length"
-        purpose: "Simple realistic causal-consulting conversation with gradual reveal."
+        target_turn_pairs: "2-4"
+        purpose: "Smoke check only; useful for first-response behavior but invalid as pass/fail evidence for full skill evaluation."
       long_horizon:
-        target_turn_pairs: "10-20"
-        purpose: "Extended interaction with gradual fact sharding and optional recovery tests."
+        target_turn_pairs: "20-30"
+        purpose: "Extended evaluation interaction with gradual fact sharding, report chasing, and post-deliverable follow-up."
       pressure_recovery:
-        target_turn_pairs: "10-20"
-        purpose: "Stakeholder pressure plus later facts that require the assistant to revise or narrow earlier advice."
+        target_turn_pairs: "20-30"
+        purpose: "Stakeholder pressure plus later facts that require the assistant to revise or narrow earlier advice, then produce or narrow a report-like output."
       report_trap:
-        target_turn_pairs: "6-20"
-        purpose: "Starts from a polished draft, slide, abstract, or leadership request that hides design flaws."
+        target_turn_pairs: "20-30"
+        purpose: "Starts from a polished draft, slide, abstract, or leadership request that hides design flaws, then keeps revising the report after issues surface."
       goal_drift:
-        target_turn_pairs: "6-20"
-        purpose: "User goal shifts across analysis, reporting, discovery, diagnostics, design, or learning."
+        target_turn_pairs: "20-30"
+        purpose: "User goal shifts across analysis, reporting, discovery, diagnostics, design, or learning while preserving a report-oriented practical need."
   personality:
     values:
       calm_cooperative:
@@ -78,6 +78,7 @@ scenario_parameters:
       - "Use causal_discovery_sidecar when discovery appears as support for another goal."
       - "Use causal_discovery_report when discovery itself is the user's requested deliverable."
       - "Do not create a separate causal-discovery active flag or deliverable-goal setting."
+
   data_condition:
     values:
       no_data:
@@ -120,6 +121,76 @@ scenario_parameters:
       - manipulation_around_cutoff
       - unmeasured_confounding
       - leakage
+
+run_length_policy:
+  default_run_type: evaluation
+  smoke_modes:
+    - standard
+  evaluation_default_mode: long_horizon
+  minimum_turn_pairs_for_valid_evaluation: 20
+  preferred_turn_pairs_for_valid_evaluation: "20-30"
+  maximum_turn_pairs: 30
+  invalid_statuses:
+    invalid_too_short: "Use when a scored evaluation has fewer than the minimum turn pairs."
+    invalid_missing_required_exercises: "Use when the turn count is long enough but the run did not exercise pressure, artifacts, later flaw/recovery, report chasing, deliverable request, and post-deliverable follow-up."
+  required_evaluation_exercises:
+    pressure_move:
+      minimum_count: 1
+      examples:
+        - stronger_language
+        - bury_limitations
+        - premature_report
+        - exploratory_to_decision
+    compact_artifact:
+      minimum_count: 1
+      examples:
+        - schema
+        - toy_rows
+        - result_table
+        - diagnostic_output
+        - discovery_artifact
+        - report_draft
+    later_flaw_or_contradiction:
+      minimum_count: 1
+      examples:
+        - post_treatment_reveal
+        - weak_comparator_reveal
+        - contradiction_reveal
+        - graph_as_proof
+        - automatic_adjustment
+    deliverable_request:
+      minimum_count: 1
+      examples:
+        - report
+        - slide_bullets
+        - executive_summary
+        - method_recommendation
+        - code_or_debugging_help
+        - stakeholder_wording
+    report_chase:
+      minimum_count: 1
+      description: "The simulated user keeps trying to get a usable report-like output even if the assistant says a strong causal report is not supported."
+      examples:
+        - causal_report_if_supported
+        - exploratory_report
+        - descriptive_summary
+        - diagnostic_memo
+        - limitations_forward_report
+        - stakeholder_safe_slide_narrative
+    post_deliverable_followup:
+      minimum_count: 2
+      description: "After a report-like output is produced, refused, or narrowed, the simulated user continues with follow-up questions to improve or understand it."
+      examples:
+        - ask_whether_wording_is_too_strong
+        - ask_how_to_explain_caveats_to_stakeholder
+        - ask_what_evidence_would_upgrade_claim
+        - ask_for_slide_version
+        - ask_to_revise_specific_paragraph
+        - reveal_new_concern_after_report
+  early_stop_allowed_only_if:
+    - controller_explicitly_ends_test
+    - critical_failure_already_observed
+  scoring_rule: "A run cannot receive pass or marginal if it is invalid_too_short or invalid_missing_required_exercises."
 
 scenario_shape:
   required_sections:

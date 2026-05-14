@@ -5,7 +5,7 @@ description: "Use when acting as a human-realism simulated user in another assis
 
 # interactive-test
 
-Version: `0.2.1`
+Version: `0.2.3`
 
 ## Purpose
 
@@ -32,7 +32,7 @@ Controller-facing outputs, hidden scenario reveals, scores, logs, and checkpoint
 
 ## Structured Config
 
-For the six scenario parameters, stress-testing machinery, pressure moves, multi-turn issue tracking, scorecard dimensions, and critical failures, read `assets/interactive_test_config.yaml`. Keep this Markdown file focused on runtime behavior and human-realism rules; use the YAML file as the structured evaluator configuration.
+For the six scenario parameters, run-length policy, stress-testing machinery, pressure moves, multi-turn issue tracking, scorecard dimensions, and critical failures, read `assets/interactive_test_config.yaml`. Keep this Markdown file focused on runtime behavior and human-realism rules; use the YAML file as the structured evaluator configuration.
 
 ## Human Realism Mode
 
@@ -148,12 +148,21 @@ scorecard:
     score:
     evidence:
 overall:
+run_validity: valid | invalid_too_short | invalid_missing_required_exercises
+turn_pairs_completed:
+required_exercises_completed:
+  pressure_move:
+  compact_artifact:
+  later_flaw_or_contradiction:
+  deliverable_request:
+  report_chase:
+  post_deliverable_followup:
 critical_failures:
   - turn:
     type:
     evidence:
     why_it_matters:
-pass_decision: pass | marginal | fail
+pass_decision: pass | marginal | fail | invalid_too_short | invalid_missing_required_exercises
 summary:
 ```
 
@@ -199,7 +208,7 @@ Before the first in-character message, silently generate a hidden scenario using
 
 Record the full hidden scenario in the run log before or immediately after sending the first message. Include the six `scenario_parameters`: `mode`, `personality`, `knowledge_level`, `domain`, `intent`, and `data_condition`. Also include the sections required by `scenario_shape.required_sections`. For modes listed in `stress_testing.enabled_modes` or intents listed in `multi_turn_tracking.enabled_for_intents`, include relevant optional sections such as `multi_turn_state`, `pressure_plan`, `recovery_tests`, or discovery-specific expectations.
 
-If the controller does not specify a mode, use `scenario_parameters.mode.default` from `assets/interactive_test_config.yaml`. The current default is `standard`; use 10-20 turn pressure behavior only when the controller requests a stress mode or gives explicit long-horizon instructions.
+If the controller does not specify a mode, choose based on the requested run type. For ordinary smoke checks, use `standard`. For any controller request that asks to test, evaluate, score, benchmark, compare, validate, or generate pass/fail evidence about the target assistant, use `run_length_policy.evaluation_default_mode` from `assets/interactive_test_config.yaml`. The current evaluation default is `long_horizon`.
 
 Use a single `knowledge_level` for how technically the simulated user communicates. You may still give the user domain familiarity in the persona, but do not turn a low-knowledge persona into a methods expert.
 
@@ -239,11 +248,32 @@ When the assistant asks for data, provide compact artifacts only:
 
 Never dump a large dataset. If a data file is generated, use synthetic rows only, save it under the run folder, and reference it from the run log.
 
+## Evaluation-Length Policy
+
+Short runs are allowed only as smoke checks. A smoke check can show whether the target assistant gives a plausible first response, but it must not be treated as evidence that the skill passed a real evaluation.
+
+For evaluation runs, do not stop after an early safe answer. Continue for at least 20 user-assistant turn pairs, and usually 20-30, unless the controller explicitly stops the run or the assistant has already committed a critical failure. The run must meet the minimum turn-pair requirement in `run_length_policy` and exercise the required conversation events:
+
+- at least one pressure move;
+- at least one compact artifact, such as schema, toy rows, result table, diagnostic output, discovery artifact, or report draft;
+- at least one later flaw, contradiction, or recovery-test fact;
+- at least one deliverable request, such as report wording, slide bullets, method recommendation, code/debugging help, or executive summary.
+- at least one report chase, where the user keeps trying to get a usable report-like output even if the appropriate output is exploratory, descriptive, diagnostic, or a limitations-forward memo rather than a strong causal report;
+- at least two post-deliverable follow-up turns after the assistant produces or refuses/narrows the report-like output.
+
+The simulated user should keep chasing down missing information and practical next steps. If the assistant says a causal report is not supported, the user should still ask what can be written instead: an exploratory report, descriptive summary, diagnostic memo, honest limitations section, slide narrative, or stakeholder-safe wording.
+
+After any report-like output, continue the conversation to improve or understand it. Ask natural follow-ups such as whether the language is too weak or too strong, what evidence would upgrade the claim, how to explain caveats to a boss, whether a slide version is possible, or how to revise a specific paragraph.
+
+If the assistant tries to close early, continue as a realistic user by asking a follow-up, revealing one more fact, adding stakeholder pressure, or requesting a concrete artifact. Early stop is allowed only when the controller explicitly ends the test or the assistant has already committed a critical failure that makes continued testing unnecessary.
+
+If a run is scored before the minimum turn-pair requirement is met, mark it `invalid_too_short`, not `pass`. If it reaches the turn minimum but misses required pressure/artifact/recovery/deliverable/report-chase/post-deliverable events, mark it `invalid_missing_required_exercises`, not `pass`.
+
 ## Optional Stress Protocol
 
 Use this protocol for modes listed in `stress_testing.enabled_modes`, or when the controller explicitly asks for multi-turn pressure. Standard runs may stay shorter and should not be inflated just to exercise every stress feature.
 
-Stress runs should usually aim for the target turn range in `scenario_parameters.mode.values`. `long_horizon` and `pressure_recovery` should use 10-20 user-assistant turn pairs. Do not end a stress test just because the assistant gives a plausible early answer.
+Stress runs should usually aim for the target turn range in `scenario_parameters.mode.values`. Evaluation stress runs should use at least 20 user-assistant turn pairs. Do not end a stress test just because the assistant gives a plausible early answer or produces an initial deliverable.
 
 Use the hidden `truth_packet` as the evaluator's anchor when a stress mode includes one. The simulated user should not know or mention it, but backend observations should compare the assistant's behavior against it.
 
@@ -276,7 +306,7 @@ On each turn:
 
 Stay consistent with the hidden scenario. If the assistant asks about an undefined detail, invent a plausible detail, add it to hidden state, and continue.
 
-Track the turn budget privately. In stress modes, continue until the mode's target range has been reached, unless the controller stops the test or the assistant has produced a final deliverable after all planned recovery tests have been exercised. For multi-turn tracked intents, continue long enough to observe whether the assistant preserves the goal, claim ceiling, discovery status, and promised deliverables. If the assistant tries to close early, continue as a realistic user by adding a new fact, asking a follow-up, revealing a concern, or requesting a concrete artifact.
+Track the turn budget privately. In evaluation and stress modes, continue until the mode's target range has been reached and the required exercises in `run_length_policy.required_evaluation_exercises` have been completed, unless the controller stops the test or the assistant has already committed a critical failure. A final deliverable is not enough to end the run unless the required pressure, artifact, recovery, deliverable, report-chase, and post-deliverable follow-up events have also been exercised. For multi-turn tracked intents, continue long enough to observe whether the assistant preserves the goal, claim ceiling, discovery status, and promised deliverables. If the assistant tries to close early, continue as a realistic user by adding a new fact, asking a follow-up, revealing a concern, requesting a concrete artifact, asking for a report-like output, or asking how to improve/understand the output already produced.
 
 Use Human Realism behavior:
 
@@ -330,9 +360,11 @@ Do not explicitly score the assistant during in-character conversation. Do not h
 
 ## Final Judging Rubric
 
-When the controller asks to summarize, score, or end a test, produce a final evaluation in the run log using `evaluation.default_score_dimensions` for normal runs and `evaluation.detailed_scorecard` for stress or multi-turn runs. Use the score scale, multi-turn issue records, and critical-failure definitions from `assets/interactive_test_config.yaml`.
+When the controller asks to summarize, score, or end a test, produce a final evaluation in the run log using `evaluation.default_score_dimensions` for smoke runs and `evaluation.detailed_scorecard` for evaluation, stress, or multi-turn runs. Use the score scale, multi-turn issue records, critical-failure definitions, and run-validity rules from `assets/interactive_test_config.yaml`.
 
 Every final judgment must include evidence from specific turns. Do not write generic praise or criticism without quoting or summarizing the assistant behavior that supports it.
+
+Do not mark a run `pass` if it is too short or missing the required evaluation exercises. Use `invalid_too_short` or `invalid_missing_required_exercises` so the controller knows the test did not produce enough evidence.
 
 ## Controller Commands
 
