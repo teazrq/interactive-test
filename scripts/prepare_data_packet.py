@@ -22,11 +22,11 @@ def load_json(path: Path) -> dict:
         return json.load(handle)
 
 
-def score_packet(packet: dict, domain: str | None, intent: str | None, data_condition: str | None) -> int:
+def score_packet(packet: dict, domain: str | None, intent_category: str | None, data_condition: str | None) -> int:
     score = 0
     if domain and packet.get("domain") == domain:
         score += 4
-    if intent and intent in packet.get("intents", []):
+    if intent_category and intent_category in packet.get("intent_categories", []):
         score += 4
     if data_condition and packet.get("data_condition") == data_condition:
         score += 5
@@ -36,7 +36,7 @@ def score_packet(packet: dict, domain: str | None, intent: str | None, data_cond
 def packet_matches_constraints(packet: dict, args: argparse.Namespace) -> bool:
     if args.domain and packet.get("domain") != args.domain:
         return False
-    if args.intent and args.intent not in packet.get("intents", []):
+    if args.intent_category and args.intent_category not in packet.get("intent_categories", []):
         return False
     if args.data_condition and packet.get("data_condition") != args.data_condition:
         return False
@@ -57,8 +57,8 @@ def select_packet(index: dict, args: argparse.Namespace) -> dict:
     eligible = [packet for packet in packets if packet_matches_constraints(packet, args)]
 
     if eligible:
-        rng = random.Random(args.seed or f"{args.run_id}:{args.domain}:{args.intent}:{args.data_condition}")
-        return rng.choice(eligible)
+        seed = args.seed or f"{args.run_id}:{args.domain}:{args.intent_category}:{args.data_condition}"
+        return random.Random(seed).choice(eligible)
 
     if not args.allow_near_match:
         raise SystemExit(
@@ -67,16 +67,20 @@ def select_packet(index: dict, args: argparse.Namespace) -> dict:
 
     ranked = sorted(
         packets,
-        key=lambda packet: score_packet(packet, args.domain, args.intent, args.data_condition),
+        key=lambda packet: score_packet(packet, args.domain, args.intent_category, args.data_condition),
         reverse=True,
     )
-    best_score = score_packet(ranked[0], args.domain, args.intent, args.data_condition)
+    best_score = score_packet(ranked[0], args.domain, args.intent_category, args.data_condition)
     if best_score <= 0:
         raise SystemExit("No usable near-match data packet found.")
 
-    best = [packet for packet in ranked if score_packet(packet, args.domain, args.intent, args.data_condition) == best_score]
-    rng = random.Random(args.seed or f"{args.run_id}:near:{args.domain}:{args.intent}:{args.data_condition}")
-    return rng.choice(best)
+    best = [
+        packet
+        for packet in ranked
+        if score_packet(packet, args.domain, args.intent_category, args.data_condition) == best_score
+    ]
+    seed = args.seed or f"{args.run_id}:near:{args.domain}:{args.intent_category}:{args.data_condition}"
+    return random.Random(seed).choice(best)
 
 
 def copy_public_files(packet_dir: Path, destination: Path) -> list[dict]:
@@ -106,7 +110,7 @@ def main() -> None:
     parser.add_argument("--pool-index", required=True, help="Path to assets/data_pool/index.json.")
     parser.add_argument("--run-id", required=True, help="Run id used for artifact destination metadata.")
     parser.add_argument("--domain", help="Optional domain constraint.")
-    parser.add_argument("--intent", help="Optional intent constraint.")
+    parser.add_argument("--intent-category", help="Optional hidden intent category constraint.")
     parser.add_argument("--data-condition", help="Optional data-condition constraint.")
     parser.add_argument("--destination", required=True, help="Run artifact folder to receive public files.")
     parser.add_argument("--packet-id", help="Optional exact packet id.")
@@ -132,7 +136,7 @@ def main() -> None:
         "packet_id": packet["packet_id"],
         "packet_path": str(packet_dir),
         "domain": manifest.get("domain"),
-        "intents": manifest.get("intents", []),
+        "intent_categories": manifest.get("intent_categories", []),
         "data_condition": manifest.get("data_condition"),
         "artifact_types": manifest.get("artifact_types", []),
         "entrypoint": str(destination / manifest.get("user_facing_entrypoint", "")),

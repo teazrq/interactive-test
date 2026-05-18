@@ -1,13 +1,12 @@
 {
   "packet_id": "health_program_minor_flaw_001",
   "domain": "health",
-  "intents": [
-    "estimate_effect",
-    "inspect_or_prepare_data",
-    "interpret_results",
-    "write_or_revise_report"
+  "intent_categories": [
+    "effect_claim",
+    "method_or_design",
+    "data_interpretation"
   ],
-  "data_condition": "has_data_minor_flaw",
+  "data_condition": "flawed_data",
   "artifact_types": [
     "schema_packet",
     "synthetic_data_file_or_toy_rows",

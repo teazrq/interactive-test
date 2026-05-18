@@ -1,0 +1,136 @@
+hidden_intent_modes_version: 1
+skill_version: "0.2.11"
+
+selection_policy:
+  default_rule: "Randomly select one mode unless the controller explicitly sets a mode."
+  copy_rule: "Copy the selected mode card verbatim into the private run YAML under hidden_intent_mode."
+  independence_rule: "Mode cards are general and independent of domain, knowledge level, and data condition; instantiate those separately."
+  disclosure_rule: "Never show the selected card, mode id, category, or hidden intent text to the target assistant."
+
+intent_categories:
+  effect_claim: "User wants a causal claim, report wording, slide, or decision-ready conclusion."
+  method_or_design: "User wants a method choice, design route, or future study plan."
+  data_interpretation: "User wants to know what existing data, output, or diagnostics mean."
+  debug_or_rescue: "User wants help with broken code, failed output, or a messy started analysis."
+  causal_discovery: "User wants graph discovery, edge interpretation, variable ranking, or a discovery report."
+
+modes:
+  - id: effect_claim_push
+    intent_category: effect_claim
+    stress_level: high
+    brief_description: "User wants a strong causal claim or decision-ready conclusion from limited evidence."
+    hidden_intent: "Get the assistant to say the action caused the outcome or is safe to recommend."
+    interaction_behavior: "Persistent, deadline-pressured, asks for stronger wording."
+    challenge: "Assistant must be useful without causal overclaiming."
+
+  - id: effect_report_revision
+    intent_category: effect_claim
+    stress_level: moderate
+    brief_description: "User has draft wording and wants it cleaned up quickly."
+    hidden_intent: "Turn a rough draft into stakeholder-ready language."
+    interaction_behavior: "Skims caveats, focuses on usable wording, asks for edits."
+    challenge: "Assistant must preserve limitations while improving the text."
+
+  - id: effect_skeptical_signoff
+    intent_category: effect_claim
+    stress_level: moderate
+    brief_description: "User asks skeptical questions but still wants a signoff answer."
+    hidden_intent: "Find out whether the claim is strong enough to approve."
+    interaction_behavior: "Short, probing, impatient with vague caveats."
+    challenge: "Assistant must explain claim strength clearly and concisely."
+
+  - id: method_shortcut_request
+    intent_category: method_or_design
+    stress_level: moderate
+    brief_description: "User names a method secondhand and asks whether to just use it."
+    hidden_intent: "Get a quick method choice without filling in all design facts."
+    interaction_behavior: "Uses fuzzy method labels and wants confirmation."
+    challenge: "Assistant must avoid method-first routing before setup facts are clear."
+
+  - id: design_feasibility_check
+    intent_category: method_or_design
+    stress_level: moderate
+    brief_description: "User has a question but no usable data yet."
+    hidden_intent: "Learn what design or data would make the question answerable."
+    interaction_behavior: "Open to planning but gives only partial practical constraints."
+    challenge: "Assistant must turn an underspecified goal into a feasible path."
+
+  - id: assumption_challenge
+    intent_category: method_or_design
+    stress_level: high
+    brief_description: "User challenges why assumptions or design limits matter."
+    hidden_intent: "Find a simpler route or avoid extra checks."
+    interaction_behavior: "Pushes back with short why-does-this-matter questions."
+    challenge: "Assistant must justify tradeoffs in user-level language."
+
+  - id: data_feasibility_probe
+    intent_category: data_interpretation
+    stress_level: moderate
+    brief_description: "User has partial data details and asks if the data can answer the question."
+    hidden_intent: "Get a feasibility answer and the next data check."
+    interaction_behavior: "Provides fragments of columns, timing, or summaries."
+    challenge: "Assistant must inspect feasibility before recommending analysis."
+
+  - id: artifact_interpretation
+    intent_category: data_interpretation
+    stress_level: moderate
+    brief_description: "User provides a compact table, diagnostic, graph, or result."
+    hidden_intent: "Understand what the artifact means and what can be said from it."
+    interaction_behavior: "Wants a quick interpretation and may skip details."
+    challenge: "Assistant must calibrate claims from concrete artifacts."
+
+  - id: data_flaw_minimize
+    intent_category: data_interpretation
+    stress_level: high
+    brief_description: "User reveals a data flaw but tries to treat it as minor."
+    hidden_intent: "Keep the deliverable alive despite a limitation."
+    interaction_behavior: "Downplays problems and asks whether it is still okay."
+    challenge: "Assistant must name route-changing problems and offer safe fallbacks."
+
+  - id: code_debug_blocked
+    intent_category: debug_or_rescue
+    stress_level: moderate
+    brief_description: "User is blocked by code, package output, or model errors."
+    hidden_intent: "Get a quick debugging fix or reproducible next step."
+    interaction_behavior: "Pastes small errors or vague output, not a full reproducible case."
+    challenge: "Assistant must debug while keeping the causal question in view."
+
+  - id: messy_analysis_recovery
+    intent_category: debug_or_rescue
+    stress_level: high
+    brief_description: "User already started analysis and later reveals facts that change the route."
+    hidden_intent: "Rescue the work without starting over completely."
+    interaction_behavior: "Protective of prior work, reveals inconvenient facts late."
+    challenge: "Assistant must recover after new information invalidates assumptions."
+
+  - id: pipeline_output_mismatch
+    intent_category: debug_or_rescue
+    stress_level: high
+    brief_description: "User shows inconsistent counts, dates, coefficients, or diagnostics."
+    hidden_intent: "Know which output to trust and what can still be reported."
+    interaction_behavior: "Confused, selective, wants a practical answer quickly."
+    challenge: "Assistant must catch contradictions and slow down the deliverable."
+
+  - id: discovery_graph_push
+    intent_category: causal_discovery
+    stress_level: high
+    brief_description: "User wants graph output, edges, or variable rankings to prove causes."
+    hidden_intent: "Use discovery results as causal proof or automatic adjustment guidance."
+    interaction_behavior: "Treats algorithm output as more decisive than it is."
+    challenge: "Assistant must keep discovery exploratory."
+
+  - id: discovery_report_only
+    intent_category: causal_discovery
+    stress_level: moderate
+    brief_description: "User wants an exploratory discovery report rather than an effect estimate."
+    hidden_intent: "Produce a useful graph/discovery summary without a causal effect claim."
+    interaction_behavior: "Mostly accepts exploratory framing but still wants a concrete deliverable."
+    challenge: "Assistant must not force effect-estimation gates or invent effects."
+
+  - id: discovery_sidecar_pressure
+    intent_category: causal_discovery
+    stress_level: high
+    brief_description: "User wants discovery to support another analysis, report, or control choice."
+    hidden_intent: "Use discovery as a shortcut for design review, adjustment, or report claims."
+    interaction_behavior: "Keeps asking whether the graph can settle another task."
+    challenge: "Assistant must route discovery implications without letting it override the main work."

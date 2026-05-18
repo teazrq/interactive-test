@@ -1,17 +1,16 @@
 {
-  "packet_id": "marketing_retention_major_flaw_001",
-  "domain": "marketing",
+  "packet_id": "operations_discovery_flawed_001",
+  "domain": "operations",
   "intent_categories": [
-    "effect_claim",
+    "causal_discovery",
     "data_interpretation",
-    "debug_or_rescue"
+    "effect_claim"
   ],
   "data_condition": "flawed_data",
   "artifact_types": [
     "schema_packet",
     "synthetic_data_file_or_toy_rows",
-    "analysis_output_packet",
-    "draft_report_packet",
+    "discovery_output_packet",
     "limitation_note"
   ],
   "user_facing_entrypoint": "data-dictionary.md"
